@@ -38,9 +38,10 @@ const SPORT_DISPLAY: Record<SportKey, string> = {
   other_sports: 'Other Sports'
 };
 
-// Public URL for the PlanetSport logo. Make sure this file exists in the repo.
+// Public URL for the PlanetSport logo.
+// Make sure the file exists at assets/PlanetSport.png in this repo.
 const LOGO_URL =
-  'https://github.com/DJazzTest/sports-calendar/raw/main/assets/PlanetSport.png';
+  'https://raw.githubusercontent.com/DJazzTest/sports-calendar/main/assets/PlanetSport.png';
 
 function groupByDate(events: RawEvent[]): Record<string, RawEvent[]> {
   return events.reduce<Record<string, RawEvent[]>>((acc, ev) => {
