@@ -47,16 +47,31 @@ test('extract Sky Sports weekly schedule into rawEvents.json', async ({ page }) 
     await allSportsTab.click();
   }
 
-  const maxScrolls = 30;
-  let lastHeight = await page.evaluate(() => document.body.scrollHeight);
-  for (let i = 0; i < maxScrolls; i++) {
-    const dayCount = await page.locator('h3.text-h4.-rs-style20').count();
-    if (dayCount >= 7) break;
-    await page.evaluate(() => window.scrollBy(0, window.innerHeight));
-    await page.waitForTimeout(1500);
-    const newHeight = await page.evaluate(() => document.body.scrollHeight);
-    if (newHeight === lastHeight) break;
-    lastHeight = newHeight;
+  // Click "Load More" until we have at least 7 distinct day headings,
+  // or the button disappears. Fallback to scrolling if needed.
+  const dayHeadingSelector = 'main h3.text-h4.-rs-style20';
+  for (let i = 0; i < 10; i++) {
+    const distinctDays = await page.$$eval(
+      dayHeadingSelector,
+      (els) =>
+        Array.from(
+          new Set(
+            els
+              .map((e) => (e.textContent || '').trim())
+              .filter((t) => t && /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/i.test(t))
+          )
+        ).length
+    );
+    if (distinctDays >= 7) break;
+
+    const loadMore = page.locator('[data-role="load-more"]');
+    if (await loadMore.isVisible().catch(() => false)) {
+      await loadMore.click().catch(() => {});
+      await page.waitForTimeout(2000);
+    } else {
+      await page.evaluate(() => window.scrollBy(0, window.innerHeight));
+      await page.waitForTimeout(1500);
+    }
   }
 
   const rawEvents: Omit<RawEvent, 'sportKey'>[] = await page.evaluate(() => {
@@ -141,7 +156,16 @@ test('extract Sky Sports weekly schedule into rawEvents.json', async ({ page }) 
         competition = parts[0].trim();
         channel = parts.slice(1).join(',').trim();
       } else {
-        competition = paraText;
+        // Some events (e.g. Tennis, Basketball) have a paragraph that is
+        // effectively just the channel info, like "Sky Sports Tennis (09:00)".
+        // In that case, treat the whole line as the channel and keep the
+        // competition as the event name.
+        if (/^Sky Sports/i.test(paraText)) {
+          competition = eventName || '';
+          channel = paraText;
+        } else {
+          competition = paraText;
+        }
       }
 
       results.push({
