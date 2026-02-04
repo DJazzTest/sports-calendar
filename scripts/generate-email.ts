@@ -38,6 +38,10 @@ const SPORT_DISPLAY: Record<SportKey, string> = {
   other_sports: 'Other Sports'
 };
 
+// Public URL for the PlanetSport logo. Make sure this file exists in the repo.
+const LOGO_URL =
+  'https://github.com/DJazzTest/sports-calendar/raw/main/assets/PlanetSport.png';
+
 function groupByDate(events: RawEvent[]): Record<string, RawEvent[]> {
   return events.reduce<Record<string, RawEvent[]>>((acc, ev) => {
     if (!acc[ev.date]) acc[ev.date] = [];
@@ -245,7 +249,8 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
     }
   }
 
-  const title = `${SPORT_DISPLAY[sportKey]} – Sky Sports schedule`;
+  const sportLabel = SPORT_DISPLAY[sportKey];
+  const title = `${sportLabel} Sports Schedule`;
 
   return `<!DOCTYPE html>
 <html>
@@ -254,7 +259,11 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
   <title>${title}</title>
 </head>
 <body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-  <h1>${title}</h1>
+  <h1>
+    ${sportLabel}
+    <img src="${LOGO_URL}" alt="PlanetSport" style="height:24px; vertical-align:middle; margin:0 6px;" />
+    Sports Schedule
+  </h1>
   <p>Upcoming events for the next 7 days.</p>
   <table cellspacing="0" cellpadding="0" border="1" style="border-collapse:collapse; width:100%; max-width:900px;">
     <thead>
@@ -273,9 +282,9 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
 </body>
 </html>`;
 }
-
 function buildNoEventsHtml(sportKey: SportKey): string {
-  const title = `${SPORT_DISPLAY[sportKey]} – Sky Sports schedule`;
+  const sportLabel = SPORT_DISPLAY[sportKey];
+  const title = `${sportLabel} Sports Schedule`;
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -283,8 +292,12 @@ function buildNoEventsHtml(sportKey: SportKey): string {
   <title>${title}</title>
 </head>
 <body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-  <h1>${title}</h1>
-  <p>No scheduled ${SPORT_DISPLAY[sportKey]} events currently.</p>
+  <h1>
+    ${sportLabel}
+    <img src="${LOGO_URL}" alt="PlanetSport" style="height:24px; vertical-align:middle; margin:0 6px;" />
+    Sports Schedule
+  </h1>
+  <p>No scheduled ${sportLabel} events currently.</p>
 </body>
 </html>`;
 }
