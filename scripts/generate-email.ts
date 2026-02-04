@@ -231,20 +231,59 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
     compareDateLabels(a, b)
   )) {
     rows.push(
-      `<tr><th colspan="5" style="background:#f0f0f0;text-align:left;padding:8px;">${date}</th></tr>`
+      `<tr>
+        <th colspan="5" style="
+          text-align:left;
+          padding:8px 12px;
+          background:linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+          color:#222;
+          font-size:13px;
+          text-transform:uppercase;
+          letter-spacing:0.04em;
+        ">
+          ${date}
+        </th>
+      </tr>`
     );
     for (const ev of dayEvents) {
       const high = isHighPriority(sportKey, ev);
       const priorityCell = high
-        ? `<td style="padding:4px 8px; background:#c62828; color:#fff; font-weight:bold;">HIGH</td>`
-        : `<td style="padding:4px 8px;"></td>`;
+        ? `<td style="
+              padding:6px 10px;
+              background:linear-gradient(180deg,#ff5252,#d50000);
+              color:#fff;
+              font-weight:700;
+              font-size:12px;
+              text-align:center;
+              border-radius:6px;
+              white-space:nowrap;
+            ">HIGH</td>`
+        : `<td style="padding:6px 10px; font-size:12px; color:#666;"></td>`;
       rows.push(
-        `<tr>
+        `<tr style="background:rgba(255,255,255,0.9);">
           ${priorityCell}
-          <td style="padding:4px 8px; white-space:nowrap;">${ev.time || ''}</td>
-          <td style="padding:4px 8px;">${ev.competition || ''}</td>
-          <td style="padding:4px 8px;">${ev.eventName || ''}</td>
-          <td style="padding:4px 8px;">${ev.channel || ''}</td>
+          <td style="padding:6px 10px; white-space:nowrap; font-weight:600; color:#1b3a8a; font-size:13px;">
+            ${ev.time || ''}
+          </td>
+          <td style="padding:6px 10px; font-size:13px; color:#333;">
+            ${ev.competition || ''}
+          </td>
+          <td style="padding:6px 10px; font-size:13px; color:#111;">
+            ${ev.eventName || ''}
+          </td>
+          <td style="padding:6px 10px; font-size:12px; color:#fff;">
+            ${
+              ev.channel
+                ? `<span style="
+                     display:inline-block;
+                     padding:4px 10px;
+                     border-radius:999px;
+                     background:linear-gradient(90deg,#1e40af,#7c3aed);
+                     font-weight:600;
+                   ">${ev.channel}</span>`
+                : ''
+            }
+          </td>
         </tr>`
       );
     }
@@ -259,27 +298,48 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
   <meta charset="UTF-8" />
   <title>${title}</title>
 </head>
-<body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-  <h1>
-    ${sportLabel}
-    <img src="${LOGO_URL}" alt="PlanetSport" style="height:24px; vertical-align:middle; margin:0 6px;" />
-    Sports Schedule
-  </h1>
-  <p>Upcoming events for the next 7 days.</p>
-  <table cellspacing="0" cellpadding="0" border="1" style="border-collapse:collapse; width:100%; max-width:900px;">
-    <thead>
-      <tr style="background:#222;color:#fff;">
-        <th style="padding:6px 8px;">Priority</th>
-        <th style="padding:6px 8px;">Time</th>
-        <th style="padding:6px 8px;">Competition</th>
-        <th style="padding:6px 8px;">Event</th>
-        <th style="padding:6px 8px;">Channel</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows.join('\n')}
-    </tbody>
-  </table>
+<body style="margin:0; padding:24px 12px; background:#020617; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+  <div style="
+    max-width:900px;
+    margin:0 auto;
+    background:radial-gradient(circle at top left,#1d4ed8,#7c3aed 45%,#020617 85%);
+    border-radius:18px;
+    padding:20px 20px 24px;
+    box-shadow:0 24px 60px rgba(15,23,42,0.7);
+    color:#e5e7eb;
+  ">
+    <div style="display:flex; align-items:center; margin-bottom:12px;">
+      <h1 style="margin:0; font-size:22px; font-weight:800; letter-spacing:0.02em;">
+        ${sportLabel}
+      </h1>
+      <img src="${LOGO_URL}" alt="PlanetSport" style="height:26px; margin-left:8px;" />
+      <span style="margin-left:6px; font-size:18px; font-weight:700;">Sports Schedule</span>
+    </div>
+    <p style="margin:0 0 16px; font-size:13px; color:#e5e7eb;">
+      Upcoming events for the next 7 days.
+    </p>
+    <table cellspacing="0" cellpadding="0" border="0" style="
+      border-collapse:separate;
+      border-spacing:0;
+      width:100%;
+      background:rgba(15,23,42,0.8);
+      border-radius:12px;
+      overflow:hidden;
+    ">
+      <thead>
+        <tr>
+          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Priority</th>
+          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Time</th>
+          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Competition</th>
+          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Event</th>
+          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Channel</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.join('\n')}
+      </tbody>
+    </table>
+  </div>
 </body>
 </html>`;
 }
@@ -292,13 +352,27 @@ function buildNoEventsHtml(sportKey: SportKey): string {
   <meta charset="UTF-8" />
   <title>${title}</title>
 </head>
-<body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-  <h1>
-    ${sportLabel}
-    <img src="${LOGO_URL}" alt="PlanetSport" style="height:24px; vertical-align:middle; margin:0 6px;" />
-    Sports Schedule
-  </h1>
-  <p>No scheduled ${sportLabel} events currently.</p>
+<body style="margin:0; padding:24px 12px; background:#020617; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+  <div style="
+    max-width:900px;
+    margin:0 auto;
+    background:radial-gradient(circle at top left,#1d4ed8,#7c3aed 45%,#020617 85%);
+    border-radius:18px;
+    padding:20px 20px 24px;
+    box-shadow:0 24px 60px rgba(15,23,42,0.7);
+    color:#e5e7eb;
+  ">
+    <div style="display:flex; align-items:center; margin-bottom:12px;">
+      <h1 style="margin:0; font-size:22px; font-weight:800; letter-spacing:0.02em;">
+        ${sportLabel}
+      </h1>
+      <img src="${LOGO_URL}" alt="PlanetSport" style="height:26px; margin-left:8px;" />
+      <span style="margin-left:6px; font-size:18px; font-weight:700;">Sports Schedule</span>
+    </div>
+    <p style="margin:0; font-size:14px; color:#e5e7eb;">
+      No scheduled ${sportLabel} events currently.
+    </p>
+  </div>
 </body>
 </html>`;
 }
