@@ -31,11 +31,14 @@ test('extract Sky Sports weekly schedule into rawEvents.json', async ({ page }) 
 
   // Handle SP Consent iframe cookie banner
   try {
-    const consentButton = page
-      .frameLocator('iframe[title="SP Consent Message"]')
-      .getByRole('button', { name: /accept all/i });
-    if (await consentButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await consentButton.click().catch(() => {});
+    // Give the iframe a moment to appear
+    await page.waitForTimeout(1000);
+    const consentFrame = page.frameLocator('iframe[title="SP Consent Message"]');
+    const consentButton = consentFrame.locator(
+      'button[title="Accept all"], button[aria-label="Accept all"]'
+    );
+    if (await consentButton.isVisible({ timeout: 8000 }).catch(() => false)) {
+      await consentButton.click({ trial: false }).catch(() => {});
       await page.waitForTimeout(1500);
     }
   } catch {
@@ -47,30 +50,36 @@ test('extract Sky Sports weekly schedule into rawEvents.json', async ({ page }) 
     await allSportsTab.click();
   }
 
-  // Click "Load More" until we have at least 7 distinct day headings,
-  // or the button disappears. Fallback to scrolling if needed.
+  // Try to reveal up to 7 days by clicking "Load More" a few times.
+  // If anything goes wrong (navigation, page close, etc.), just stop
+  // and continue with whatever days we have.
   const dayHeadingSelector = 'main h3.text-h4.-rs-style20';
-  for (let i = 0; i < 10; i++) {
-    const distinctDays = await page.$$eval(
-      dayHeadingSelector,
-      (els) =>
-        Array.from(
-          new Set(
-            els
-              .map((e) => (e.textContent || '').trim())
-              .filter((t) => t && /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/i.test(t))
-          )
-        ).length
-    );
-    if (distinctDays >= 7) break;
+  for (let i = 0; i < 6; i++) {
+    try {
+      const distinctDays = await page.$$eval(
+        dayHeadingSelector,
+        (els) =>
+          Array.from(
+            new Set(
+              els
+                .map((e) => (e.textContent || '').trim())
+                .filter((t) => t && /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/i.test(t))
+            )
+          ).length
+      );
+      if (distinctDays >= 7) break;
 
-    const loadMore = page.locator('[data-role="load-more"]');
-    if (await loadMore.isVisible().catch(() => false)) {
-      await loadMore.click().catch(() => {});
-      await page.waitForTimeout(2000);
-    } else {
-      await page.evaluate(() => window.scrollBy(0, window.innerHeight));
-      await page.waitForTimeout(1500);
+      const loadMore = page.locator('[data-role="load-more"]');
+      const visible = await loadMore.isVisible().catch(() => false);
+      if (visible) {
+        await loadMore.click().catch(() => {});
+        await page.waitForTimeout(1000);
+      } else {
+        await page.evaluate(() => window.scrollBy(0, window.innerHeight));
+        await page.waitForTimeout(750);
+      }
+    } catch {
+      break;
     }
   }
 
