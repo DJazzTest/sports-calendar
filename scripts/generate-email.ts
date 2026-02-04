@@ -251,7 +251,7 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
         ? `<td style="
               padding:6px 10px;
               background:linear-gradient(180deg,#ff5252,#d50000);
-              color:#fff;
+              color:#1e3a8a;
               font-weight:700;
               font-size:12px;
               text-align:center;
@@ -271,7 +271,7 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
           <td style="padding:6px 10px; font-size:13px; color:#111;">
             ${ev.eventName || ''}
           </td>
-          <td style="padding:6px 10px; font-size:12px; color:#fff;">
+          <td style="padding:6px 10px; font-size:12px;">
             ${
               ev.channel
                 ? `<span style="
@@ -279,6 +279,7 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
                      padding:4px 10px;
                      border-radius:999px;
                      background:linear-gradient(90deg,#1e40af,#7c3aed);
+                     color:#1e3a8a;
                      font-weight:600;
                    ">${ev.channel}</span>`
                 : ''
