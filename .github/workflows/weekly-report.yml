@@ -1,0 +1,62 @@
+name: Sky Sports Weekly Schedule
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    env:
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_TO: ${{ secrets.EMAIL_TO }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: sports-calendar
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: sports-calendar
+
+      - name: Extract 7-day events from Sky Sports
+        run: npm run extract
+        working-directory: sports-calendar
+
+      - name: Split events by sport
+        run: npm run split
+        working-directory: sports-calendar
+
+      - name: Generate HTML emails per sport
+        run: npm run generate:emails
+        working-directory: sports-calendar
+
+      - name: Send email reports
+        run: npm run send:emails
+        working-directory: sports-calendar
+
+      - name: Upload raw and split JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: sky-sports-events-json
+          path: |
+            sports-calendar/output/rawEvents.json
+            sports-calendar/output/*.json
+
+      - name: Upload generated email HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: sky-sports-email-html
+          path: sports-calendar/output/email-*.html
+

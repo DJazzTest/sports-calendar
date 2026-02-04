@@ -1,0 +1,23 @@
+{
+  "name": "sports-calendar",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "extract": "npx playwright test tests/extract-events.spec.ts",
+    "split": "ts-node scripts/split-by-sport.ts",
+    "generate:emails": "ts-node scripts/generate-email.ts",
+    "send:emails": "ts-node scripts/send-email.ts",
+    "weekly-report": "npm run extract && npm run split && npm run generate:emails && npm run send:emails"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.48.0",
+    "nodemailer": "^6.9.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.0"
+  }
+}
+
