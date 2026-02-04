@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "test": "playwright test",
-    "extract": "npx playwright test tests/extract-events.spec.ts",
+    "extract": "ts-node scripts/extract-events.ts",
     "split": "ts-node scripts/split-by-sport.ts",
     "generate:emails": "ts-node scripts/generate-email.ts",
     "send:emails": "ts-node scripts/send-email.ts",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playwright/test": "^1.48.0",
+    "playwright": "^1.48.0",
     "nodemailer": "^6.9.15"
   },
   "devDependencies": {
