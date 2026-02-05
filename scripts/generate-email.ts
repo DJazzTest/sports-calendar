@@ -43,6 +43,20 @@ const SPORT_DISPLAY: Record<SportKey, string> = {
 const LOGO_URL =
   'https://raw.githubusercontent.com/DJazzTest/sports-calendar/main/assets/PlanetSport.png';
 
+// Public URLs for per-sport icons.
+const ICON_BASE_URL =
+  'https://raw.githubusercontent.com/DJazzTest/sports-calendar/main/assets';
+
+const SPORT_ICON: Partial<Record<SportKey, string>> = {
+  football: `${ICON_BASE_URL}/football.png`,
+  rugby_union: `${ICON_BASE_URL}/rugby.png`,
+  rugby_league: `${ICON_BASE_URL}/rugby.png`,
+  cricket: `${ICON_BASE_URL}/cricket.png`,
+  darts: `${ICON_BASE_URL}/darts.png`,
+  tennis: `${ICON_BASE_URL}/tennis.png`,
+  golf: `${ICON_BASE_URL}/golf.png`
+};
+
 function groupByDate(events: RawEvent[]): Record<string, RawEvent[]> {
   return events.reduce<Record<string, RawEvent[]>>((acc, ev) => {
     if (!acc[ev.date]) acc[ev.date] = [];
@@ -88,6 +102,11 @@ function compareDateLabels(a: string, b: string): number {
 
 function isHighPriority(sportKey: SportKey, ev: RawEvent): boolean {
   const text = `${ev.eventName} ${ev.competition}`.toLowerCase();
+
+  // Demote women's / youth / junior fixtures even if they match a high-priority team.
+  if (/(women|woman|ladies|u21|under-21|under 21|junior)/i.test(text)) {
+    return false;
+  }
 
   if (sportKey === 'football') {
     const clubs = [
@@ -225,6 +244,7 @@ function isHighPriority(sportKey: SportKey, ev: RawEvent): boolean {
 
 function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
   const grouped = groupByDate(events);
+  const iconUrl = SPORT_ICON[sportKey] || '';
 
   const rows: string[] = [];
   for (const [date, dayEvents] of Object.entries(grouped).sort(([a], [b]) =>
@@ -234,12 +254,15 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
       `<tr>
         <th colspan="5" style="
           text-align:left;
-          padding:8px 12px;
-          background:linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
-          color:#222;
+          padding:10px 12px;
+          background-color:#4b5563;
+          color:#42f59e;
           font-size:13px;
+          font-weight:700;
           text-transform:uppercase;
           letter-spacing:0.04em;
+          border:1px solid #e5e7eb;
+          border-bottom:1px solid #9ca3af;
         ">
           ${date}
         </th>
@@ -249,41 +272,36 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
       const high = isHighPriority(sportKey, ev);
       const priorityCell = high
         ? `<td style="
-              padding:6px 10px;
-              background:linear-gradient(180deg,#ff5252,#d50000);
-              color:#1e3a8a;
+              padding:8px 10px;
+              background-color:#dc2626;
+              color:#ffffff;
               font-weight:700;
               font-size:12px;
               text-align:center;
-              border-radius:6px;
               white-space:nowrap;
+              border:1px solid #e5e7eb;
             ">HIGH</td>`
-        : `<td style="padding:6px 10px; font-size:12px; color:#666;"></td>`;
+        : `<td style="padding:8px 10px; font-size:12px; color:#6b7280; border:1px solid #e5e7eb; background:#ffffff;"></td>`;
       rows.push(
-        `<tr style="background:rgba(255,255,255,0.9);">
+        `<tr style="background:#ffffff;">
           ${priorityCell}
-          <td style="padding:6px 10px; white-space:nowrap; font-weight:600; color:#1b3a8a; font-size:13px;">
+          <td style="padding:8px 10px; white-space:nowrap; font-weight:600; color:#1f2937; font-size:13px; border:1px solid #e5e7eb;">
             ${ev.time || ''}
           </td>
-          <td style="padding:6px 10px; font-size:13px; color:#333;">
-            ${ev.competition || ''}
+          <td style="padding:8px 10px; font-size:13px; color:${
+            high ? '#b91c1c' : '#374151'
+          }; border:1px solid #e5e7eb;">
+            ${
+              iconUrl
+                ? `<img src="${iconUrl}" alt="" style="height:16px; width:16px; vertical-align:middle; margin-right:6px;" />`
+                : ''
+            }${ev.competition || ''}
           </td>
-          <td style="padding:6px 10px; font-size:13px; color:#111;">
+          <td style="padding:8px 10px; font-size:13px; color:#111827; font-weight:500; border:1px solid #e5e7eb;">
             ${ev.eventName || ''}
           </td>
-          <td style="padding:6px 10px; font-size:12px;">
-            ${
-              ev.channel
-                ? `<span style="
-                     display:inline-block;
-                     padding:4px 10px;
-                     border-radius:999px;
-                     background:linear-gradient(90deg,#1e40af,#7c3aed);
-                     color:#1e3a8a;
-                     font-weight:600;
-                   ">${ev.channel}</span>`
-                : ''
-            }
+          <td style="padding:8px 10px; font-size:12px; color:#374151; border:1px solid #e5e7eb;">
+            ${ev.channel || ''}
           </td>
         </tr>`
       );
@@ -299,41 +317,45 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
   <meta charset="UTF-8" />
   <title>${title}</title>
 </head>
-<body style="margin:0; padding:24px 12px; background:#020617; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+<body style="margin:0; padding:24px 12px; background:#f3f4f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
   <div style="
     max-width:900px;
     margin:0 auto;
-    background:radial-gradient(circle at top left,#1d4ed8,#7c3aed 45%,#020617 85%);
-    border-radius:18px;
-    padding:20px 20px 24px;
-    box-shadow:0 24px 60px rgba(15,23,42,0.7);
-    color:#e5e7eb;
+    background:#ffffff;
+    border-radius:8px;
+    padding:24px 24px 28px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.1);
+    border:1px solid #e5e7eb;
   ">
-    <div style="display:flex; align-items:center; margin-bottom:12px;">
-      <h1 style="margin:0; font-size:22px; font-weight:800; letter-spacing:0.02em;">
+    <div style="display:flex; align-items:center; margin-bottom:8px;">
+      <h1 style="margin:0; font-size:22px; font-weight:800; color:#1f2937; letter-spacing:0.02em;">
         ${sportLabel}
       </h1>
+      ${
+        iconUrl
+          ? `<img src="${iconUrl}" alt="" style="height:24px; margin-left:8px; margin-right:2px;" />`
+          : ''
+      }
       <img src="${LOGO_URL}" alt="PlanetSport" style="height:26px; margin-left:8px;" />
-      <span style="margin-left:6px; font-size:18px; font-weight:700;">Sports Schedule</span>
+      <span style="margin-left:6px; font-size:18px; font-weight:700; color:#1f2937;">Sports Schedule</span>
     </div>
-    <p style="margin:0 0 16px; font-size:13px; color:#e5e7eb;">
+    <p style="margin:0 0 16px; font-size:14px; color:#6b7280;">
       Upcoming events for the next 7 days.
     </p>
     <table cellspacing="0" cellpadding="0" border="0" style="
-      border-collapse:separate;
-      border-spacing:0;
+      border-collapse:collapse;
       width:100%;
-      background:rgba(15,23,42,0.8);
-      border-radius:12px;
+      border:1px solid #e5e7eb;
+      border-radius:6px;
       overflow:hidden;
     ">
       <thead>
         <tr>
-          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Priority</th>
-          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Time</th>
-          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Competition</th>
-          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Event</th>
-          <th style="padding:10px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; text-align:left; color:#cbd5f5; border-bottom:1px solid rgba(148,163,184,0.4);">Channel</th>
+          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Priority</th>
+          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Time</th>
+          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Competition</th>
+          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Event</th>
+          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Channel</th>
         </tr>
       </thead>
       <tbody>
@@ -347,30 +369,36 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
 function buildNoEventsHtml(sportKey: SportKey): string {
   const sportLabel = SPORT_DISPLAY[sportKey];
   const title = `${sportLabel} Sports Schedule`;
+  const iconUrl = SPORT_ICON[sportKey] || '';
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
   <title>${title}</title>
 </head>
-<body style="margin:0; padding:24px 12px; background:#020617; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+<body style="margin:0; padding:24px 12px; background:#f3f4f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
   <div style="
     max-width:900px;
     margin:0 auto;
-    background:radial-gradient(circle at top left,#1d4ed8,#7c3aed 45%,#020617 85%);
-    border-radius:18px;
-    padding:20px 20px 24px;
-    box-shadow:0 24px 60px rgba(15,23,42,0.7);
-    color:#e5e7eb;
+    background:#ffffff;
+    border-radius:8px;
+    padding:24px 24px 28px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.1);
+    border:1px solid #e5e7eb;
   ">
-    <div style="display:flex; align-items:center; margin-bottom:12px;">
-      <h1 style="margin:0; font-size:22px; font-weight:800; letter-spacing:0.02em;">
+    <div style="display:flex; align-items:center; margin-bottom:8px;">
+      <h1 style="margin:0; font-size:22px; font-weight:800; color:#1f2937; letter-spacing:0.02em;">
         ${sportLabel}
       </h1>
+      ${
+        iconUrl
+          ? `<img src="${iconUrl}" alt="" style="height:24px; margin-left:8px; margin-right:2px;" />`
+          : ''
+      }
       <img src="${LOGO_URL}" alt="PlanetSport" style="height:26px; margin-left:8px;" />
-      <span style="margin-left:6px; font-size:18px; font-weight:700;">Sports Schedule</span>
+      <span style="margin-left:6px; font-size:18px; font-weight:700; color:#1f2937;">Sports Schedule</span>
     </div>
-    <p style="margin:0; font-size:14px; color:#e5e7eb;">
+    <p style="margin:0; font-size:14px; color:#6b7280;">
       No scheduled ${sportLabel} events currently.
     </p>
   </div>
