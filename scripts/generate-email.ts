@@ -21,6 +21,24 @@ const SPORT_FILE_KEYS: SportKey[] = [
   'other_sports'
 ];
 
+// Order for combined email: list view then expand to see schedule.
+const COMBINED_SPORT_ORDER: SportKey[] = [
+  'football',
+  'cricket',
+  'f1',
+  'rugby_union',
+  'rugby_league',
+  'golf',
+  'tennis',
+  'racing',
+  'darts',
+  'boxing',
+  'nfl',
+  'basketball',
+  'netball',
+  'other_sports'
+];
+
 const SPORT_DISPLAY: Record<SportKey, string> = {
   football: 'Football',
   cricket: 'Cricket',
@@ -360,21 +378,10 @@ function resolveSkyChannel(channelText: string | undefined): SkyChannelMeta | nu
   return found || null;
 }
 
-function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
-  // Filter to upcoming 7‑day window starting from tomorrow.
-  const filtered = events.filter((ev) =>
-    isEventInUpcomingWindow(ev.date, 7, true)
-  );
-
-  // If nothing falls in the upcoming window, fall back to the
-  // "no events" style email so we don't show out‑of‑date fixtures.
-  if (!filtered.length) {
-    return buildNoEventsHtml(sportKey);
-  }
-
+/** Builds only the table HTML (thead + tbody) for a sport; used by single-sport and combined email. */
+function buildSportTableHtml(sportKey: SportKey, filtered: RawEvent[]): string {
   const grouped = groupByDate(filtered);
   const iconUrl = SPORT_ICON[sportKey] || '';
-
   const rows: string[] = [];
   for (const [date, dayEvents] of Object.entries(grouped).sort(([a], [b]) =>
     compareDateLabels(a, b)
@@ -480,9 +487,33 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
     }
   }
 
-  const sportLabel = SPORT_DISPLAY[sportKey];
-  const title = `${sportLabel} Sports Schedule`;
+  return `<table cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse; width:100%; border:1px solid #e5e7eb; border-radius:6px; overflow:hidden;">
+  <thead>
+    <tr>
+      <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Channel</th>
+      <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Event</th>
+      <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Competition</th>
+      <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Time</th>
+      <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Priority</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rows.join('\n')}
+  </tbody>
+</table>`;
+}
 
+function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
+  const filtered = events.filter((ev) =>
+    isEventInUpcomingWindow(ev.date, 7, true)
+  );
+  if (!filtered.length) {
+    return buildNoEventsHtml(sportKey);
+  }
+  const sportLabel = SPORT_DISPLAY[sportKey];
+  const iconUrl = SPORT_ICON[sportKey] || '';
+  const title = `${sportLabel} Sports Schedule`;
+  const tableHtml = buildSportTableHtml(sportKey, filtered);
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -490,54 +521,83 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
   <title>${title}</title>
 </head>
 <body style="margin:0; padding:24px 12px; background:#f3f4f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-  <div style="
-    max-width:900px;
-    margin:0 auto;
-    background:#ffffff;
-    border-radius:8px;
-    padding:24px 24px 28px;
-    box-shadow:0 1px 3px rgba(0,0,0,0.1);
-    border:1px solid #e5e7eb;
-  ">
+  <div style="max-width:900px; margin:0 auto; background:#ffffff; border-radius:8px; padding:24px 24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.1); border:1px solid #e5e7eb;">
     <div style="display:flex; align-items:center; margin-bottom:8px;">
-      <h1 style="margin:0; font-size:22px; font-weight:800; color:#1f2937; letter-spacing:0.02em;">
-        ${sportLabel}
-      </h1>
-      ${
-        iconUrl
-          ? `<img src="${iconUrl}" alt="" style="height:24px; margin-left:8px; margin-right:2px;" />`
-          : ''
-      }
+      <h1 style="margin:0; font-size:22px; font-weight:800; color:#1f2937; letter-spacing:0.02em;">${sportLabel}</h1>
+      ${iconUrl ? `<img src="${iconUrl}" alt="" style="height:24px; margin-left:8px; margin-right:2px;" />` : ''}
       <img src="${LOGO_URL}" alt="PlanetSport" style="height:26px; margin-left:8px;" />
       <span style="margin-left:6px; font-size:18px; font-weight:700; color:#1f2937;">Sports Schedule</span>
     </div>
-    <p style="margin:0 0 16px; font-size:14px; color:#6b7280;">
-      Upcoming events for the next 7 days.
-    </p>
-    <table cellspacing="0" cellpadding="0" border="0" style="
-      border-collapse:collapse;
-      width:100%;
-      border:1px solid #e5e7eb;
-      border-radius:6px;
-      overflow:hidden;
-    ">
-      <thead>
-        <tr>
-          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Channel</th>
-          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Event</th>
-          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Competition</th>
-          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Time</th>
-          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Priority</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.join('\n')}
-      </tbody>
-    </table>
+    <p style="margin:0 0 16px; font-size:14px; color:#6b7280;">Upcoming events for the next 7 days.</p>
+    ${tableHtml}
   </div>
 </body>
 </html>`;
 }
+function buildCombinedEmailHtml(): string {
+  const sections: string[] = [];
+  for (const key of COMBINED_SPORT_ORDER) {
+    const sportLabel = SPORT_DISPLAY[key];
+    const iconUrl = SPORT_ICON[key] || '';
+    const fileName = key === 'other_sports' ? 'other_sports.json' : `${key}.json`;
+    const jsonPath = path.join(OUTPUT_DIR, fileName);
+    let events: RawEvent[] = [];
+    if (fs.existsSync(jsonPath)) {
+      events = JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as RawEvent[];
+    }
+    const filtered = events.filter((ev) =>
+      isEventInUpcomingWindow(ev.date, 7, true)
+    );
+    const summaryContent = iconUrl
+      ? `<img src="${iconUrl}" alt="" style="height:18px; vertical-align:middle; margin-right:6px;" /><span style="font-weight:600; color:#1f2937;">${sportLabel}</span>`
+      : `<span style="font-weight:600; color:#1f2937;">${sportLabel}</span>`;
+    if (filtered.length > 0) {
+      const tableHtml = buildSportTableHtml(key, filtered);
+      sections.push(
+        `<details style="margin-bottom:12px; border:1px solid #e5e7eb; border-radius:6px; overflow:hidden; background:#ffffff;">
+          <summary style="padding:12px 16px; cursor:pointer; list-style:none; display:flex; align-items:center; background:#f9fafb; font-size:15px; user-select:none;">
+            <span style="margin-right:8px; color:#6b7280;">▶</span>
+            ${summaryContent}
+          </summary>
+          <div style="padding:0 12px 12px;">
+            ${tableHtml}
+          </div>
+        </details>`
+      );
+    } else {
+      sections.push(
+        `<details style="margin-bottom:12px; border:1px solid #e5e7eb; border-radius:6px; overflow:hidden; background:#ffffff;">
+          <summary style="padding:12px 16px; cursor:pointer; list-style:none; display:flex; align-items:center; background:#f9fafb; font-size:15px; user-select:none;">
+            <span style="margin-right:8px; color:#6b7280;">▶</span>
+            ${summaryContent}
+          </summary>
+          <p style="margin:12px 16px; font-size:14px; color:#059669;">✅ ${sportLabel} – No Schedule ✅</p>
+        </details>`
+      );
+    }
+  }
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Sky Sports Weekly Schedule – All sports</title>
+</head>
+<body style="margin:0; padding:24px 12px; background:#f3f4f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+  <div style="max-width:900px; margin:0 auto; background:#ffffff; border-radius:8px; padding:24px 24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.1); border:1px solid #e5e7eb;">
+    <div style="display:flex; align-items:center; margin-bottom:8px;">
+      <img src="${LOGO_URL}" alt="PlanetSport" style="height:28px; margin-right:10px;" />
+      <span style="font-size:22px; font-weight:800; color:#1f2937;">Sports Schedule</span>
+    </div>
+    <p style="margin:0 0 20px; font-size:14px; color:#6b7280;">
+      Upcoming events for the next 7 days. Expand a sport to see its schedule.
+    </p>
+    ${sections.join('\n')}
+  </div>
+</body>
+</html>`;
+}
+
 function buildNoEventsHtml(sportKey: SportKey): string {
   const sportLabel = SPORT_DISPLAY[sportKey];
   const title = `${sportLabel} Sports Schedule`;
@@ -583,27 +643,10 @@ function main() {
     throw new Error(`Output directory does not exist: ${OUTPUT_DIR}. Run extract & split first.`);
   }
 
-  for (const key of SPORT_FILE_KEYS) {
-    const fileName = key === 'other_sports' ? 'other_sports.json' : `${key}.json`;
-    const jsonPath = path.join(OUTPUT_DIR, fileName);
-    let html: string;
-    if (fs.existsSync(jsonPath)) {
-      const events = JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as RawEvent[];
-      if (events.length) {
-        html = buildHtmlTable(key, events);
-      } else {
-        html = buildNoEventsHtml(key);
-      }
-    } else {
-      // Even if there is no JSON file (no events at all for this sport),
-      // still send an email so service teams know there is nothing scheduled.
-      html = buildNoEventsHtml(key);
-    }
-
-    const htmlPath = path.join(OUTPUT_DIR, `email-${key}.html`);
-    fs.writeFileSync(htmlPath, html, 'utf8');
-    console.log(`✅ Wrote email HTML for ${key} to ${htmlPath}`);
-  }
+  const combinedHtml = buildCombinedEmailHtml();
+  const combinedPath = path.join(OUTPUT_DIR, 'email-combined.html');
+  fs.writeFileSync(combinedPath, combinedHtml, 'utf8');
+  console.log(`✅ Wrote combined email HTML to ${combinedPath}`);
 }
 
 if (require.main === module) {

@@ -34,7 +34,7 @@ jobs:
       - name: Split events by sport
         run: npm run split
 
-      - name: Generate HTML emails per sport
+      - name: Generate combined HTML email
         run: npm run generate:emails
 
       - name: Send email reports
