@@ -38,6 +38,92 @@ const SPORT_DISPLAY: Record<SportKey, string> = {
   other_sports: 'Other Sports'
 };
 
+type SkyChannelMeta = {
+  name: string;
+  url: string;
+  logo?: string;
+};
+
+// Known Sky Sports channels and their watch URLs.
+// Order from most specific to most generic so we get the right logo.
+const SKY_CHANNELS: SkyChannelMeta[] = [
+  {
+    name: 'Sky Sports Main Event',
+    url: 'https://www.skysports.com/watch/sky-sports-main-event',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=7023540979985581117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports Premier League',
+    url: 'https://www.skysports.com/watch/sky-sports-premier-league'
+  },
+  {
+    name: 'Sky Sports Football',
+    url: 'https://www.skysports.com/watch/sky-sports-football',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=6419044864297754117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports Cricket',
+    url: 'https://www.skysports.com/watch/sky-sports-cricket',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=8800573917753836117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports Golf',
+    url: 'https://www.skysports.com/watch/sky-sports-golf',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=8844525863258642117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports F1',
+    url: 'https://www.skysports.com/watch/sky-sports-f1',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=5158758531313507117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports Tennis',
+    url: 'https://www.skysports.com/watch/sky-sports-tennis',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=4896228439428403117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports NFL',
+    url: 'https://www.skysports.com/watch/sky-sports-nfl',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=8719200523741613117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports News',
+    url: 'https://www.skysports.com/watch/sky-sports-news'
+  },
+  {
+    name: 'Sky Sports+',
+    url: 'https://www.skysports.com/watch/sky-sports-plus',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=6858995960279493117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports Racing',
+    url: 'https://www.skysports.com/watch/sky-sports-racing',
+    // From the snippet you provided (Stations - light).
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=6627732418081674117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports Mix',
+    url: 'https://www.skysports.com/watch/sky-sports-mix',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=8350774144114096117&width=600&height=100&rule=Stations%20-%20light'
+  },
+  {
+    name: 'Sky Sports',
+    url: 'https://www.skysports.com/watch',
+    logo:
+      'https://img001-eu-mo-prd.delivery.skycdp.com/select/logo?entityId=6814741578518519117&width=600&height=100&rule=Stations%20-%20light'
+  }
+];
+
 // Public URL for the PlanetSport logo.
 // Make sure the file exists at assets/PlanetSport.png in this repo.
 const LOGO_URL =
@@ -98,6 +184,31 @@ function compareDateLabels(a: string, b: string): number {
     return pa.day - pb.day;
   }
   return a.localeCompare(b);
+}
+
+function isEventInUpcomingWindow(
+  dateLabel: string,
+  totalDays: number,
+  startFromTomorrow: boolean
+): boolean {
+  const parsed = parseDateLabel(dateLabel);
+  if (!parsed) return false;
+
+  const now = new Date();
+  const year = now.getFullYear();
+
+  const eventDate = new Date(year, parsed.monthIndex, parsed.day);
+  const today = new Date(year, now.getMonth(), now.getDate());
+
+  const start = new Date(today);
+  if (startFromTomorrow) {
+    start.setDate(start.getDate() + 1);
+  }
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + (totalDays - 1));
+
+  return eventDate >= start && eventDate <= end;
 }
 
 function isHighPriority(sportKey: SportKey, ev: RawEvent): boolean {
@@ -242,14 +353,33 @@ function isHighPriority(sportKey: SportKey, ev: RawEvent): boolean {
   return false;
 }
 
+function resolveSkyChannel(channelText: string | undefined): SkyChannelMeta | null {
+  if (!channelText) return null;
+  const lower = channelText.toLowerCase();
+  const found = SKY_CHANNELS.find((c) => lower.includes(c.name.toLowerCase()));
+  return found || null;
+}
+
 function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
-  const grouped = groupByDate(events);
+  // Filter to upcoming 7‑day window starting from tomorrow.
+  const filtered = events.filter((ev) =>
+    isEventInUpcomingWindow(ev.date, 7, true)
+  );
+
+  // If nothing falls in the upcoming window, fall back to the
+  // "no events" style email so we don't show out‑of‑date fixtures.
+  if (!filtered.length) {
+    return buildNoEventsHtml(sportKey);
+  }
+
+  const grouped = groupByDate(filtered);
   const iconUrl = SPORT_ICON[sportKey] || '';
 
   const rows: string[] = [];
   for (const [date, dayEvents] of Object.entries(grouped).sort(([a], [b]) =>
     compareDateLabels(a, b)
   )) {
+    // Date row
     rows.push(
       `<tr>
         <th colspan="5" style="
@@ -268,6 +398,17 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
         </th>
       </tr>`
     );
+
+    // Per-date column labels row
+    rows.push(
+      `<tr>
+        <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Channel</th>
+        <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Event</th>
+        <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Competition</th>
+        <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Time</th>
+        <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Priority</th>
+      </tr>`
+    );
     for (const ev of dayEvents) {
       const high = isHighPriority(sportKey, ev);
       const priorityCell = high
@@ -281,28 +422,59 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
               white-space:nowrap;
               border:1px solid #e5e7eb;
             ">HIGH</td>`
-        : `<td style="padding:8px 10px; font-size:12px; color:#6b7280; border:1px solid #e5e7eb; background:#ffffff;"></td>`;
-      rows.push(
-        `<tr style="background:#ffffff;">
-          ${priorityCell}
-          <td style="padding:8px 10px; white-space:nowrap; font-weight:600; color:#1f2937; font-size:13px; border:1px solid #e5e7eb;">
-            ${ev.time || ''}
-          </td>
-          <td style="padding:8px 10px; font-size:13px; color:${
-            high ? '#b91c1c' : '#374151'
-          }; border:1px solid #e5e7eb;">
+        : `<td style="
+              padding:8px 10px;
+              font-size:12px;
+              color:#327da8;
+              font-weight:600;
+              text-align:center;
+              white-space:nowrap;
+              border:1px solid #e5e7eb;
+              background:#ffffff;
+            ">Standard</td>`;
+
+      const timeCell = `<td style="padding:8px 10px; white-space:nowrap; font-weight:600; color:#327da8; font-size:13px; border:1px solid #e5e7eb;">
+            ${ev.time || 'Scheduled'}
+          </td>`;
+
+      const competitionCell = `<td style="padding:8px 10px; font-size:13px; color:${
+        high ? '#b91c1c' : '#327da8'
+      }; border:1px solid #e5e7eb;">
             ${
               iconUrl
                 ? `<img src="${iconUrl}" alt="" style="height:16px; width:16px; vertical-align:middle; margin-right:6px;" />`
                 : ''
             }${ev.competition || ''}
-          </td>
-          <td style="padding:8px 10px; font-size:13px; color:#111827; font-weight:500; border:1px solid #e5e7eb;">
+          </td>`;
+
+      const eventCell = `<td style="padding:8px 10px; font-size:13px; color:#111827; font-weight:500; border:1px solid #e5e7eb;">
             ${ev.eventName || ''}
-          </td>
-          <td style="padding:8px 10px; font-size:12px; color:#374151; border:1px solid #e5e7eb;">
-            ${ev.channel || ''}
-          </td>
+          </td>`;
+
+      const channelCell = `<td style="padding:8px 10px; font-size:12px; color:#327da8; border:1px solid #e5e7eb;">
+            ${
+              ev.channel
+                ? (() => {
+                    const meta = resolveSkyChannel(ev.channel);
+                    if (!meta) {
+                      return ev.channel;
+                    }
+                    const logoPart = meta.logo
+                      ? `<img src="${meta.logo}" alt="${meta.name}" style="height:14px; vertical-align:middle; margin-right:4px;" />`
+                      : '';
+                    return `${logoPart}${ev.channel}`;
+                  })()
+                : ''
+            }
+          </td>`;
+
+      rows.push(
+        `<tr style="background:#ffffff;">
+          ${channelCell}
+          ${eventCell}
+          ${competitionCell}
+          ${timeCell}
+          ${priorityCell}
         </tr>`
       );
     }
@@ -351,11 +523,11 @@ function buildHtmlTable(sportKey: SportKey, events: RawEvent[]): string {
     ">
       <thead>
         <tr>
-          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Priority</th>
-          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Time</th>
-          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Competition</th>
-          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Event</th>
           <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Channel</th>
+          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Event</th>
+          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Competition</th>
+          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Time</th>
+          <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Priority</th>
         </tr>
       </thead>
       <tbody>
