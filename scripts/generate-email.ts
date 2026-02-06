@@ -410,8 +410,8 @@ function buildSportTableHtml(sportKey: SportKey, filtered: RawEvent[]): string {
     rows.push(
       `<tr>
         <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Channel</th>
-        <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Event</th>
         <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Competition</th>
+        <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Event</th>
         <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Time</th>
         <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Priority</th>
       </tr>`
@@ -478,8 +478,8 @@ function buildSportTableHtml(sportKey: SportKey, filtered: RawEvent[]): string {
       rows.push(
         `<tr style="background:#ffffff;">
           ${channelCell}
-          ${eventCell}
           ${competitionCell}
+          ${eventCell}
           ${timeCell}
           ${priorityCell}
         </tr>`
@@ -491,8 +491,8 @@ function buildSportTableHtml(sportKey: SportKey, filtered: RawEvent[]): string {
   <thead>
     <tr>
       <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Channel</th>
-      <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Event</th>
       <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Competition</th>
+      <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Event</th>
       <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Time</th>
       <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Priority</th>
     </tr>
