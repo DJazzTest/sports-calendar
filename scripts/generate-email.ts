@@ -147,9 +147,10 @@ const SKY_CHANNELS: SkyChannelMeta[] = [
 const LOGO_URL =
   'https://raw.githubusercontent.com/DJazzTest/sports-calendar/main/assets/PlanetSport.png';
 
-// Public URLs for per-sport icons.
+// Public URLs for per-sport icons (GitHub assets + wheresthematch.com for missing sports).
 const ICON_BASE_URL =
   'https://raw.githubusercontent.com/DJazzTest/sports-calendar/main/assets';
+const WTM_ICONS = 'https://www.wheresthematch.com/images/sports';
 
 const SPORT_ICON: Partial<Record<SportKey, string>> = {
   football: `${ICON_BASE_URL}/football.png`,
@@ -158,7 +159,14 @@ const SPORT_ICON: Partial<Record<SportKey, string>> = {
   cricket: `${ICON_BASE_URL}/cricket.png`,
   darts: `${ICON_BASE_URL}/darts.png`,
   tennis: `${ICON_BASE_URL}/tennis.png`,
-  golf: `${ICON_BASE_URL}/golf.png`
+  golf: `${ICON_BASE_URL}/golf.png`,
+  f1: `${WTM_ICONS}/f1.gif`,
+  racing: `${WTM_ICONS}/horseracing.gif`,
+  boxing: `${WTM_ICONS}/boxing.gif`,
+  nfl: `${WTM_ICONS}/americanfootball.gif`,
+  basketball: `${WTM_ICONS}/basketball.gif`,
+  netball: `${WTM_ICONS}/basketball.gif`,
+  other_sports: 'https://www.wheresthematch.com/images/nav4-more-sports-on-tv-off.png'
 };
 
 function groupByDate(events: RawEvent[]): Record<string, RawEvent[]> {
@@ -410,8 +418,8 @@ function buildSportTableHtml(sportKey: SportKey, filtered: RawEvent[]): string {
     rows.push(
       `<tr>
         <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Channel</th>
-        <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Event</th>
         <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Competition</th>
+        <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Event</th>
         <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Time</th>
         <th style="padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#4b5563; background-color:#e5e7eb; border:1px solid #e5e7eb;">Priority</th>
       </tr>`
@@ -421,14 +429,15 @@ function buildSportTableHtml(sportKey: SportKey, filtered: RawEvent[]): string {
       const priorityCell = high
         ? `<td style="
               padding:8px 10px;
-              background-color:#dc2626;
+              background-color:#b91c1c;
               color:#ffffff;
-              font-weight:700;
+              font-weight:800;
               font-size:12px;
               text-align:center;
               white-space:nowrap;
-              border:1px solid #e5e7eb;
-            ">HIGH</td>`
+              border:2px solid #7f1d1d;
+              text-transform:uppercase;
+            ">HIGH!</td>`
         : `<td style="
               padding:8px 10px;
               font-size:12px;
@@ -478,8 +487,8 @@ function buildSportTableHtml(sportKey: SportKey, filtered: RawEvent[]): string {
       rows.push(
         `<tr style="background:#ffffff;">
           ${channelCell}
-          ${eventCell}
           ${competitionCell}
+          ${eventCell}
           ${timeCell}
           ${priorityCell}
         </tr>`
@@ -491,8 +500,8 @@ function buildSportTableHtml(sportKey: SportKey, filtered: RawEvent[]): string {
   <thead>
     <tr>
       <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Channel</th>
-      <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Event</th>
       <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Competition</th>
+      <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Event</th>
       <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Time</th>
       <th style="padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; text-align:left; color:#ffffff; background-color:#1f2937; font-weight:700; border:1px solid #374151;">Priority</th>
     </tr>
@@ -548,9 +557,24 @@ function buildCombinedEmailHtml(): string {
     const filtered = events.filter((ev) =>
       isEventInUpcomingWindow(ev.date, 7, true)
     );
+    // Build a short preview of the first couple of fixtures for this sport.
+    const previewEvents = filtered.slice(0, 2);
+    const previewParts = previewEvents
+      .map((ev) => ev.eventName || ev.competition || '')
+      .filter(Boolean);
+    let previewText = '';
+    if (previewParts.length) {
+      previewText = previewParts.join(' | ');
+      if (filtered.length > previewParts.length) {
+        previewText += ` +${filtered.length - previewParts.length} more`;
+      }
+    }
+    const previewHtml = previewText
+      ? `<span style="margin-left:8px; font-size:12px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:420px; display:inline-block; vertical-align:middle;">${previewText}</span>`
+      : '';
     const summaryContent = iconUrl
-      ? `<img src="${iconUrl}" alt="" style="height:18px; vertical-align:middle; margin-right:6px;" /><span style="font-weight:600; color:#1f2937;">${sportLabel}</span>`
-      : `<span style="font-weight:600; color:#1f2937;">${sportLabel}</span>`;
+      ? `<img src="${iconUrl}" alt="" style="height:18px; vertical-align:middle; margin-right:6px;" /><span style="font-weight:600; color:#1f2937;">${sportLabel}</span>${previewHtml}`
+      : `<span style="font-weight:600; color:#1f2937;">${sportLabel}</span>${previewHtml}`;
     if (filtered.length > 0) {
       const tableHtml = buildSportTableHtml(key, filtered);
       sections.push(
